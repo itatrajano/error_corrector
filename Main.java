@@ -1,5 +1,6 @@
 package correcter;
 
+import java.io.*;
 import java.util.*;
 
 class ErrorGenerator {
@@ -37,7 +38,7 @@ class ErrorGenerator {
         return damagedString;
     }
 
-    public static char getRandomChar() {
+    private static char getRandomChar() {
         Random random = new Random();
         char randomChar = 0;
         boolean isCharSpace = false;
@@ -54,6 +55,15 @@ class ErrorGenerator {
         }
         return randomChar;
     }
+
+    //Change a random single bit in a byte
+    public static int getDamagedByteAsInt(int originalInt) {
+        Random random = new Random();
+        int drawnNumber = 1 + random.nextInt(7); //Drawn a number from 1 to 8, representing the bit to be changed
+        drawnNumber = 1 << drawnNumber;
+        return originalInt ^ drawnNumber;
+    }
+
 }
 
 class EncoderDecoder {
@@ -108,6 +118,69 @@ class EncoderDecoder {
 public class Main {
     public static void main(String[] args) {
 
+        try {
+            File inputFile = new File("./send.txt");
+            FileInputStream inputStream = new FileInputStream(inputFile);
+            Queue<Integer> bytesAsIntQueue = new ArrayDeque<>();
+            int byteAsInt = inputStream.read();
+            while (byteAsInt != -1) {
+                bytesAsIntQueue.offer(byteAsInt);
+                byteAsInt = inputStream.read();
+            }
+            inputStream.close();
+
+            int[] bytesAsIntArray = new int[bytesAsIntQueue.size()];
+
+            //Adiciona o conteúdo do Queue ao Array de Ints
+            for (int i = 0; i < bytesAsIntArray.length; i++) {
+                bytesAsIntArray[i] = bytesAsIntQueue.poll();
+            }
+
+            //Prints input as text
+            for (int i : bytesAsIntArray) {
+                System.out.print((char) i);
+            }
+            System.out.println();
+
+            //Prints input as binary
+            for (int i : bytesAsIntArray) {
+                System.out.print(Integer.toBinaryString(i) + " ");
+            }
+            System.out.println();
+
+            //Insert errors
+            int[] damagedBytesAsIntArray = new int[bytesAsIntArray.length];
+            for (int i = 0; i < damagedBytesAsIntArray.length; i++) {
+                damagedBytesAsIntArray[i] = ErrorGenerator.getDamagedByteAsInt(bytesAsIntArray[i]);
+                //Prints damaged message as binary
+                System.out.print(Integer.toBinaryString(damagedBytesAsIntArray[i]) + " ");
+            }
+            System.out.println();
+
+            //Print damaged message as text
+            for (int i : damagedBytesAsIntArray) {
+                System.out.print((char) i);
+            }
+
+            //Record damaged message
+            try {
+                File outputFile = new File("./received.txt");
+                FileOutputStream outputStream = new FileOutputStream(outputFile);
+                for (int i : damagedBytesAsIntArray) {
+                    outputStream.write(i);
+                }
+                outputStream.close();
+
+            } catch (Exception e) {
+                System.out.println("Erro de Gravação");
+                System.out.println(e.getLocalizedMessage());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Erro de Leitura");
+            System.out.println(e.getLocalizedMessage());
+        }
+/*
         Scanner scanner =  new Scanner(System.in);
         String input = scanner.nextLine();
         System.out.println(input);
@@ -117,5 +190,6 @@ public class Main {
         System.out.println(damagedString);
         String restoredString = EncoderDecoder.decoderAndRestorer(damagedString, 3);
         System.out.println(restoredString);
+*/
     }
 }
