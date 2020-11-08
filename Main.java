@@ -68,6 +68,7 @@ class ErrorGenerator {
 
 class EncoderDecoder {
 
+    //Repeats every character in the string "repetition" times
     public static String encoder(String inputString, int repetition) {
         char[] inputCharArray = inputString.toCharArray();
         char[] encodedCharArray = new char[inputCharArray.length * repetition];
@@ -78,6 +79,32 @@ class EncoderDecoder {
             }
         }
         return String.copyValueOf(encodedCharArray);
+    }
+
+    //Doubles every bit and add a parity bit every 8 bits
+    public static int encoder(int byteAsInt) {
+        //Calculating parity bit
+        boolean parity = false;
+        int parityCheck = byteAsInt;
+        while (parityCheck != 0) {
+            parity = !parity;
+            parityCheck = parityCheck & (parityCheck - 1);
+        }
+        int parityBit = parity ? 1 : 0;
+
+        //This code is an adaptation of the bit interleaving algorithm, but using the same number twice.
+        int input = byteAsInt;
+        int doubledBits = 0;
+        short iterationLimit = 8; //Number of bits / 2
+        for (int i = 0; i < iterationLimit; i++) {
+            int mask = input & (1 << i);
+            doubledBits = doubledBits | (mask << i);
+            doubledBits = doubledBits | (mask << i + 1);
+        }
+        //Adding parity bit
+        doubledBits = (doubledBits << 1) + parityBit;
+
+        return doubledBits;
     }
 
     public static String decoderAndRestorer(String inputString, int repetition) {
@@ -119,7 +146,7 @@ public class Main {
     public static void main(String[] args) {
 
         try {
-            File inputFile = new File("./send.txt");
+            File inputFile = new File("D:\\Error Correcting Encoder-Decoder\\task\\src\\correcter\\send.txt");
             FileInputStream inputStream = new FileInputStream(inputFile);
             Queue<Integer> bytesAsIntQueue = new ArrayDeque<>();
             int byteAsInt = inputStream.read();
@@ -148,6 +175,18 @@ public class Main {
             }
             System.out.println();
 
+//TESTE DE DUPLICAÇÃO DE BITS
+            int[] encodedBytesArray = new int[bytesAsIntArray.length];
+            System.out.println("Bits duplicados + bit de paridade:");
+            for (int i = 0; i < encodedBytesArray.length; i++) {
+                encodedBytesArray[i] = EncoderDecoder.encoder(bytesAsIntArray[i]);
+                System.out.print(Integer.toBinaryString(encodedBytesArray[i]) + " ");
+            }
+            System.out.println();
+
+//FIM DO TESTE DE DUPLICAÇÃO DE BITS
+
+/*
             //Insert errors
             int[] damagedBytesAsIntArray = new int[bytesAsIntArray.length];
             for (int i = 0; i < damagedBytesAsIntArray.length; i++) {
@@ -161,15 +200,17 @@ public class Main {
             for (int i : damagedBytesAsIntArray) {
                 System.out.print((char) i);
             }
-
+*/
             //Record damaged message
             try {
-                File outputFile = new File("./received.txt");
+                File outputFile = new File("D:\\Error Correcting Encoder-Decoder\\task\\src\\correcter\\received.txt");
                 FileOutputStream outputStream = new FileOutputStream(outputFile);
-                for (int i : damagedBytesAsIntArray) {
+                for (int i : encodedBytesArray) {
+                //for (int i : damagedBytesAsIntArray) {
                     outputStream.write(i);
                 }
-                outputStream.close();
+               outputStream.close();
+
 
             } catch (Exception e) {
                 System.out.println("Erro de Gravação");
